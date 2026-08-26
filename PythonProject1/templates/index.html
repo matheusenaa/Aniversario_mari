@@ -5,32 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mariana - 15 Anos | Convite & Lista de Presentes</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 20px 10px;
             color: #ffffff;
-            /* Imagem de convite como plano de fundo */
-            background: linear-gradient(rgba(10, 25, 47, 0.75), rgba(10, 25, 47, 0.75)),
+            background: linear-gradient(rgba(10, 25, 47, 0.8), rgba(10, 25, 47, 0.8)),
                         url('{{ url_for("static", filename="convite.png") }}') no-repeat center center fixed;
             background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Container principal para centralizar e proteger o conteúdo das gotas */
+        .main-container {
+            width: 100%;
+            max-width: 800px;
+            z-index: 2; /* Fica acima das gotas de água */
         }
 
         .card {
             background: rgba(16, 37, 66, 0.85);
             backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 25px;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
             border: 1px solid rgba(212, 175, 55, 0.3);
             margin-bottom: 25px;
+            width: 100%;
         }
 
         h1, h2, h3 {
             color: #f3e5ab;
             text-align: center;
             font-weight: 600;
+            margin-top: 0;
         }
 
         .item {
@@ -40,7 +58,7 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
         }
 
         .item:last-child {
@@ -51,6 +69,13 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .item form {
+            width: auto;
+            flex-grow: 1;
+            justify-content: flex-end;
         }
 
         input, textarea {
@@ -60,6 +85,8 @@
             font-size: 14px;
             background: rgba(255, 255, 255, 0.95);
             color: #222;
+            flex-grow: 1;
+            min-width: 200px;
         }
 
         input::placeholder, textarea::placeholder {
@@ -75,6 +102,7 @@
             cursor: pointer;
             font-weight: bold;
             transition: transform 0.2s, background 0.2s;
+            white-space: nowrap;
         }
 
         button:hover {
@@ -89,7 +117,6 @@
             font-size: 16px;
         }
 
-        /* QR Code Retrátil */
         details.qr-container {
             text-align: center;
             background: rgba(255, 255, 255, 0.1);
@@ -106,76 +133,119 @@
             outline: none;
         }
 
-        .badge-presenca {
-            background: #d4af37;
-            color: #102542;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
+        /* EFEITO VISUAL: Gotas de água nas laterais */
+        .water-drop {
+            position: fixed;
+            top: -50px;
+            background: linear-gradient(transparent, rgba(255, 255, 255, 0.4));
+            width: 2px;
+            height: 40px;
+            animation: fall linear infinite;
+            z-index: 1; /* Fica atrás do conteúdo principal */
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh);
+            }
+        }
+
+        /* Ajustes específicos para telas de celulares muito pequenos */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px 5px;
+            }
+            .card {
+                padding: 15px;
+            }
+            .item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .item form {
+                width: 100%;
+            }
+            input, button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>✨ Mariana - 15 Anos ✨</h1>
-        <p style="text-align: center; color: #e0e0e0;">
-            12 de Setembro de 2026 | das 11h às 18h<br>
-            Venha mergulhar conosco nessa celebração especial!
-        </p>
+    <!-- Sistema que gera as gotas d'água dinamicamente apenas nas laterais -->
+    <script>
+        function createDrop() {
+            const drop = document.createElement('div');
+            drop.classList.add('water-drop');
 
-        <!-- QR Code Oculto que pode ser exibido se necessário -->
-        <details class="qr-container">
-            <summary>📱 Exibir QR Code do Site</summary>
-            <div style="margin-top: 15px;">
-                <img src="{{ qr_code_url }}" alt="QR Code do Site" style="border-radius: 8px; background: white; padding: 5px;">
-                <p style="font-size: 12px; color: #ccc; margin-top: 5px;">Escaneie para acessar pelo celular</p>
-            </div>
-        </details>
-    </div>
+            // Define se a gota cai na esquerda (0% a 15%) ou na direita (85% a 100%) da tela
+            const isLeft = Math.random() > 0.5;
+            const randomX = isLeft ? Math.random() * 15 : 85 + (Math.random() * 15);
 
-    <!-- Seção de Confirmação de Presença (RSVP) -->
-    <div class="card">
-        <h2>✉️ Confirmar Presença (RSVP)</h2>
-        <form action="/confirmar-presenca" method="POST" style="flex-direction: column;">
-            <input type="text" name="nome" placeholder="Seu nome completo" required>
-            <input type="number" name="acompanhantes" placeholder="Número de acompanhantes (0 se for sozinho)" min="0" value="0" required>
-            <textarea name="mensagem" placeholder="Deixe um recado especial para a aniversariante (opcional)" rows="2"></textarea>
-            <button type="submit" class="btn-rsvp">Confirmar Presença</button>
-        </form>
+            drop.style.left = randomX + 'vw';
+            drop.style.animationDuration = (Math.random() * 2 + 1.5) + 's'; // Velocidade aleatória entre 1.5s e 3.5s
+            drop.style.opacity = Math.random() * 0.5 + 0.2; // Opacidade variada para efeito de profundidade
+            drop.style.height = (Math.random() * 30 + 20) + 'px'; // Tamanhos variados
 
-        {% if presencas %}
-            <h3 style="margin-top: 25px; text-align: left;">Confirmados ({{ presencas|length }}):</h3>
-            <ul style="padding-left: 20px; color: #e0e0e0;">
-                {% for p in presencas %}
-                    <li style="margin-bottom: 6px;">
-                        <strong>{{ p.nome }}</strong>
-                        {% if p.acompanhantes > 0 %}
-                            <span class="badge-presenca">+{{ p.acompanhantes }} acompanhante(s)</span>
-                        {% endif %}
-                        {% if p.mensagem %}<em> - "{{ p.mensagem }}"</em>{% endif %}
+            document.body.appendChild(drop);
+
+            // Remove a gota após o término da animação para não travar o navegador
+            setTimeout(() => {
+                drop.remove();
+            }, 3500);
+        }
+
+        // Dispara uma nova gota a cada 150 milissegundos
+        setInterval(createDrop, 150);
+    </script>
+
+    <div class="main-container">
+
+        <div class="card">
+            <h1>✨ Mariana - 15 Anos ✨</h1>
+            <p style="text-align: center; color: #e0e0e0; margin-bottom: 0;">
+                12 de Setembro de 2026 | das 11h às 18h<br>
+                Venha mergulhar conosco nessa celebração especial!
+            </p>
+
+            <details class="qr-container">
+                <summary>📱 Exibir QR Code do Site</summary>
+                <div style="margin-top: 15px;">
+                    <img src="{{ qr_code_url }}" alt="QR Code do Site" style="max-width: 150px; width: 100%; border-radius: 8px; background: white; padding: 5px;">
+                    <p style="font-size: 12px; color: #ccc; margin-top: 5px;">Escaneie para acessar pelo celular</p>
+                </div>
+            </details>
+        </div>
+
+        <!-- Seção de Confirmação de Presença (RSVP) - LISTA DE PESSOAS REMOVIDA PARA PRIVACIDADE -->
+        <div class="card">
+            <h2>✉️ Confirmar Presença (RSVP)</h2>
+            <form action="/confirmar-presenca" method="POST" style="flex-direction: column;">
+                <input type="text" name="nome" placeholder="Seu nome completo" required>
+                <input type="number" name="acompanhantes" placeholder="Número de acompanhantes (0 se for sozinho)" min="0" value="0" required>
+                <textarea name="mensagem" placeholder="Deixe um recado especial para a aniversariante (opcional)" rows="2"></textarea>
+                <button type="submit" class="btn-rsvp">Confirmar Presença</button>
+            </form>
+        </div>
+
+        <!-- Seção de Lista de Presentes -->
+        <div class="card">
+            <h2>🎁 Lista de Sugestões de Presentes</h2>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                {% for item in presentes %}
+                    <li class="item">
+                        <span><strong>{{ item.nome }}</strong></span>
+                        <form action="/reservar/{{ item.id }}" method="POST">
+                            <input type="text" name="nome_convidado" placeholder="Seu nome" required>
+                            <button type="submit">Presentear</button>
+                        </form>
                     </li>
                 {% endfor %}
             </ul>
-        {% endif %}
-    </div>
+        </div>
 
-    <!-- Seção de Lista de Presentes -->
-    <div class="card">
-        <h2>🎁 Lista de Sugestões de Presentes</h2>
-        <ul style="list-style: none; padding: 0;">
-            {% for item in presentes %}
-                <li class="item">
-                    <span><strong>{{ item.nome }}</strong></span>
-                    <!-- O formulário fica sempre liberado sem mostrar nomes de quem escolheu -->
-                    <form action="/reservar/{{ item.id }}" method="POST">
-                        <input type="text" name="nome_convidado" placeholder="Seu nome" required>
-                        <button type="submit">Presentear</button>
-                    </form>
-                </li>
-            {% endfor %}
-        </ul>
     </div>
 
 </body>

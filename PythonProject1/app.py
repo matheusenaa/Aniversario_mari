@@ -1,11 +1,14 @@
+import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def get_db_connection():
-    conn = sqlite3.connect('aniversario.db')
+    conn = sqlite3.connect(os.path.join(BASE_DIR, 'aniversario.db'))
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -79,7 +82,7 @@ def reservar(item_id):
     if nome_convidado:
         conn = get_db_connection()
         # Insere ou atualiza o registro permitindo que múltiplos convidados escolham a opção
-        conn.execute('UPDATE presentes SET por = COALESCE(por || ", ", "") || ? WHERE id = ?', (nome_convidado, item_id))
+        conn.execute('UPDATE presentes SET reservado = 1, por = COALESCE(por || ", ", "") || ? WHERE id = ?', (nome_convidado, item_id))
         conn.commit()
         conn.close()
     return redirect(url_for('index'))

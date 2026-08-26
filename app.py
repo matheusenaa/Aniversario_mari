@@ -1,1 +1,4 @@
-Pythonfrom flask import Flask, render_template, request, redirect, url_forapp = Flask(__name__)# Exemplo de lista de presentes em memóriapresentes = [    {"id": 1, "nome": "Jogo de Pratos", "reservado": False, "por": ""},    {"id": 2, "nome": "Cafeteira", "reservado": False, "por": ""},    {"id": 3, "nome": "Livro de Receitas", "reservado": False, "por": ""},]@app.route('/')def index():    return render_template('index.html', presentes=presentes)@app.route('/reservar/<int:item_id>', methods=['POST'])def reservar(item_id):    nome_convidado = request.form.get('nome_convidado')    for item in presentes:        if item['id'] == item_id and not item['reservado']:            item['reservado'] = True            item['por'] = nome_convidado            break    return redirect(url_for('index'))if __name__ == '__main__':    app.run(debug=True)
+from PythonProject1.app import app
+
+if __name__ == '__main__':
+    app.run(debug=True)
