@@ -151,6 +151,108 @@
             }
         }
 
+        /* Coluna de nome padronizado */
+        .item-name {
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #d4af37;
+            font-size: 13px;
+            text-align: right;
+            padding-right: 10px;
+            border-right: 1px solid rgba(212, 175, 55, 0.25);
+            margin-right: 10px;
+        }
+
+        .item-name:empty::before {
+            content: '—';
+            color: rgba(255,255,255,0.2);
+        }
+
+        /* Controle de áudio */
+        .audio-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(16, 37, 66, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            font-size: 13px;
+            color: #f3e5ab;
+            transition: opacity 0.3s;
+        }
+
+        .audio-controls.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .audio-btn {
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+            color: #102542;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .audio-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .audio-volume {
+            width: 70px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(212, 175, 55, 0.3);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .audio-volume::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d4af37;
+            cursor: pointer;
+        }
+
+        .audio-volume::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d4af37;
+            border: none;
+            cursor: pointer;
+        }
+
+        .audio-label {
+            white-space: nowrap;
+            font-size: 12px;
+        }
+
         /* Ajustes específicos para telas de celulares muito pequenos */
         @media (max-width: 480px) {
             body {
@@ -166,8 +268,25 @@
             .item form {
                 width: 100%;
             }
+            .item-name {
+                width: 100%;
+                min-width: 0;
+                max-width: none;
+                text-align: left;
+                border-right: none;
+                padding-right: 0;
+                margin-right: 0;
+                margin-bottom: 4px;
+                border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+                padding-bottom: 4px;
+            }
             input, button {
                 width: 100%;
+            }
+            .audio-controls {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px 12px;
             }
         }
     </style>
@@ -221,7 +340,7 @@
 
         <!-- Seção de Confirmação de Presença (RSVP) - LISTA DE PESSOAS REMOVIDA PARA PRIVACIDADE -->
         <div class="card">
-            <h2>✉️ Confirmar Presença (RSVP)</h2>
+            <h2>✉️ Confirmar Presença </h2>
             <form action="/confirmar-presenca" method="POST" style="flex-direction: column;">
                 <input type="text" name="nome" placeholder="Seu nome completo" required>
                 <input type="number" name="acompanhantes" placeholder="Número de acompanhantes (0 se for sozinho)" min="0" value="0" required>
@@ -236,6 +355,7 @@
             <ul style="list-style: none; padding: 0; margin: 0;">
                 {% for item in presentes %}
                     <li class="item">
+                        <span class="item-name" title="{{ item.por or '' }}">{{ item.por or '' }}</span>
                         <span><strong>{{ item.nome }}</strong></span>
                         <form action="/reservar/{{ item.id }}" method="POST">
                             <input type="text" name="nome_convidado" placeholder="Seu nome" required>
@@ -247,6 +367,49 @@
         </div>
 
     </div>
+
+    <!-- Áudio ambiente: ondas do mar -->
+    <audio id="bgMusic" loop preload="metadata">
+        <source src="{{ url_for('static', filename='ocean-waves.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <div class="audio-controls" id="audioControls">
+        <span class="audio-label">🌊</span>
+        <button class="audio-btn" id="playPauseBtn" title="Play / Pause" aria-label="Play ou Pause">&#9654;</button>
+        <span class="audio-label">Vol</span>
+        <input type="range" class="audio-volume" id="volumeSlider" min="0" max="100" value="30" title="Volume" aria-label="Controle de volume">
+    </div>
+
+    <script>
+        (function() {
+            var audio = document.getElementById('bgMusic');
+            var btn = document.getElementById('playPauseBtn');
+            var slider = document.getElementById('volumeSlider');
+            var controls = document.getElementById('audioControls');
+
+            audio.volume = 0.3;
+
+            function updateBtn() {
+                btn.innerHTML = audio.paused ? '&#9654;' : '&#9646;&#9646;';
+                btn.title = audio.paused ? 'Play' : 'Pause';
+            }
+
+            btn.addEventListener('click', function() {
+                if (audio.paused) {
+                    audio.play().then(updateBtn).catch(function(){});
+                } else {
+                    audio.pause();
+                    updateBtn();
+                }
+            });
+
+            slider.addEventListener('input', function() {
+                audio.volume = this.value / 100;
+            });
+
+            updateBtn();
+        })();
+    </script>
 
 </body>
 </html>

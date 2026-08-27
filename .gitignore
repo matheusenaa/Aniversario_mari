@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 aniversario.db
 *.db
+.env
+instance/
+*.log
