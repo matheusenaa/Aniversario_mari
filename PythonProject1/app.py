@@ -1,10 +1,49 @@
+import json
 import os
 import sqlite3
+import urllib.request
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# URL do Google Apps Script (Web App) publicada pelo dono da planilha.
+# Configure esta variável na hospedagem (Render) ou em um arquivo .env local.
+GOOGLE_SHEETS_WEBAPP_URL = os.environ.get('GOOGLE_SHEETS_WEBAPP_URL', '')
+
+
+def salvar_no_sheets(nome='', presenca='', presente='', acompanhantes='', mensagem=''):
+    """Envia um registro para a planilha do Google via Google Apps Script Web App.
+
+    Falha silenciosa (apenas log) para nunca quebrar o fluxo do site
+    caso a URL não esteja configurada ou o serviço esteja indisponível.
+    """
+    if not GOOGLE_SHEETS_WEBAPP_URL:
+        print('[Google Sheets] GOOGLE_SHEETS_WEBAPP_URL nao configurada. Registro nao enviado.')
+        return
+
+    payload = {
+        'data_hora': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'nome': nome,
+        'presenca': presenca,
+        'presente': presente,
+        'acompanhantes': acompanhantes,
+        'mensagem': mensagem,
+    }
+    try:
+        req = urllib.request.Request(
+            GOOGLE_SHEETS_WEBAPP_URL,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()
+        print(f'[Google Sheets] Registro enviado: {nome} / {presente or presenca}')
+    except Exception as exc:
+        print(f'[Google Sheets] Erro ao enviar registro: {exc}')
 
 
 def get_db_connection():
@@ -81,10 +120,13 @@ def reservar(item_id):
     nome_convidado = request.form.get('nome_convidado')
     if nome_convidado:
         conn = get_db_connection()
+        presente = conn.execute('SELECT nome FROM presentes WHERE id = ?', (item_id,)).fetchone()
         # Insere ou atualiza o registro permitindo que múltiplos convidados escolham a opção
         conn.execute('UPDATE presentes SET reservado = 1, por = COALESCE(por || ", ", "") || ? WHERE id = ?', (nome_convidado, item_id))
         conn.commit()
         conn.close()
+        presente_nome = presente['nome'] if presente else f'Presente #{item_id}'
+        salvar_no_sheets(nome=nome_convidado, presenca='', presente=presente_nome)
     return redirect(url_for('index'))
 
 
@@ -100,6 +142,7 @@ def confirmar_presenca():
                      (nome, acompanhantes, mensagem))
         conn.commit()
         conn.close()
+        salvar_no_sheets(nome=nome, presenca='Confirmado', acompanhantes=acompanhantes, mensagem=mensagem)
     return redirect(url_for('index'))
 
 

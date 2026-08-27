@@ -57,12 +57,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            flex-wrap: nowrap;
+            gap: 12px;
         }
 
         .item:last-child {
             border-bottom: none;
+        }
+
+        /* Nome da opção de presente (esquerda) */
+        .gift-name {
+            flex: 1 1 auto;
+            min-width: 0;
+            text-align: left;
         }
 
         form {
@@ -74,8 +81,13 @@
 
         .item form {
             width: auto;
-            flex-grow: 1;
+            flex: 0 0 auto;
             justify-content: flex-end;
+        }
+
+        .item form input {
+            flex: 0 1 150px;
+            min-width: 100px;
         }
 
         input, textarea {
@@ -151,20 +163,21 @@
             }
         }
 
-        /* Coluna de nome padronizado */
+        /* Coluna de nome padronizado (centro) */
         .item-name {
-            width: 180px;
-            min-width: 180px;
-            max-width: 180px;
+            width: 170px;
+            min-width: 170px;
+            max-width: 170px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             color: #d4af37;
             font-size: 13px;
-            text-align: right;
-            padding-right: 10px;
+            text-align: center;
+            padding: 0 10px;
             border-right: 1px solid rgba(212, 175, 55, 0.25);
-            margin-right: 10px;
+            border-left: 1px solid rgba(212, 175, 55, 0.25);
+            margin: 0 2px;
         }
 
         .item-name:empty::before {
@@ -253,8 +266,8 @@
             font-size: 12px;
         }
 
-        /* Ajustes específicos para telas de celulares muito pequenos */
-        @media (max-width: 480px) {
+        /* Ajustes específicos para telas de celulares e tablets */
+        @media (max-width: 640px) {
             body {
                 padding: 10px 5px;
             }
@@ -263,9 +276,13 @@
             }
             .item {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
+                flex-wrap: wrap;
             }
             .item form {
+                width: 100%;
+            }
+            .gift-name {
                 width: 100%;
             }
             .item-name {
@@ -274,11 +291,13 @@
                 max-width: none;
                 text-align: left;
                 border-right: none;
+                border-left: none;
                 padding-right: 0;
-                margin-right: 0;
-                margin-bottom: 4px;
+                padding-left: 0;
+                margin: 0 0 4px;
                 border-bottom: 1px solid rgba(212, 175, 55, 0.15);
                 padding-bottom: 4px;
+                white-space: normal;
             }
             input, button {
                 width: 100%;
@@ -355,8 +374,8 @@
             <ul style="list-style: none; padding: 0; margin: 0;">
                 {% for item in presentes %}
                     <li class="item">
+                        <span class="gift-name"><strong>{{ item.nome }}</strong></span>
                         <span class="item-name" title="{{ item.por or '' }}">{{ item.por or '' }}</span>
-                        <span><strong>{{ item.nome }}</strong></span>
                         <form action="/reservar/{{ item.id }}" method="POST">
                             <input type="text" name="nome_convidado" placeholder="Seu nome" required>
                             <button type="submit">Presentear</button>
@@ -369,7 +388,7 @@
     </div>
 
     <!-- Áudio ambiente: ondas do mar -->
-    <audio id="bgMusic" loop preload="metadata">
+    <audio id="bgMusic" loop preload="auto">
         <source src="{{ url_for('static', filename='ocean-waves.mp3') }}" type="audio/mpeg">
     </audio>
 
@@ -408,6 +427,20 @@
             });
 
             updateBtn();
+
+            // Tenta iniciar a música automaticamente ao abrir o site.
+            // Navegadores modernos bloqueiam autoplay com som antes da primeira
+            // interação do usuário. Se for bloqueado, o botão manual continua disponível.
+            function tryAutoplay() {
+                var promise = audio.play();
+                if (promise !== undefined) {
+                    promise.then(updateBtn).catch(function() {
+                        // Autoplay bloqueado pelo navegador - controle manual permanece ativo
+                    });
+                }
+            }
+
+            tryAutoplay();
         })();
     </script>
 
