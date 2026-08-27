@@ -14,8 +14,7 @@
             margin: 0;
             padding: 20px 10px;
             color: #ffffff;
-            background: linear-gradient(rgba(10, 25, 47, 0.8), rgba(10, 25, 47, 0.8)),
-                        url('{{ url_for("static", filename="convite.png") }}') no-repeat center center fixed;
+            background: url('{{ url_for("static", filename="convite.png") }}') no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
             display: flex;
@@ -348,6 +347,23 @@
                 Venha mergulhar conosco nessa celebração especial!
             </p>
 
+            <!-- Localização do evento -->
+            <div style="text-align: center; margin: 20px 0 0;">
+                <p style="margin: 0 0 8px; font-weight: bold; color: #f3e5ab;">📍 Local do Evento</p>
+                <a href="{{ maps_link }}" target="_blank" rel="noopener"
+                   style="color: #e0e0e0; font-size: 15px; text-decoration: none; border-bottom: 1px dashed rgba(212, 175, 55, 0.6); padding-bottom: 2px;">
+                    QMS 14 Lote 16/18, Condomínio Mini Chácara
+                </a>
+            </div>
+
+            <details class="qr-container">
+                <summary>📍 Exibir QR Code da Localização</summary>
+                <div style="margin-top: 15px;">
+                    <img src="{{ qr_code_local_url }}" alt="QR Code da Localização - Google Maps" style="max-width: 150px; width: 100%; border-radius: 8px; background: white; padding: 5px;">
+                    <p style="font-size: 12px; color: #ccc; margin-top: 5px;">Escaneie para abrir o endereço no Google Maps</p>
+                </div>
+            </details>
+
             <details class="qr-container">
                 <summary>📱 Exibir QR Code do Site</summary>
                 <div style="margin-top: 15px;">
@@ -375,7 +391,7 @@
                 {% for item in presentes %}
                     <li class="item">
                         <span class="gift-name"><strong>{{ item.nome }}</strong></span>
-                        <span class="item-name" title="{{ item.por or '' }}">{{ item.por or '' }}</span>
+                        <span class="item-name">{{ "Reservado" if item.reservado else "Disponível" }}</span>
                         <form action="/reservar/{{ item.id }}" method="POST">
                             <input type="text" name="nome_convidado" placeholder="Seu nome" required>
                             <button type="submit">Presentear</button>
@@ -427,20 +443,6 @@
             });
 
             updateBtn();
-
-            // Tenta iniciar a música automaticamente ao abrir o site.
-            // Navegadores modernos bloqueiam autoplay com som antes da primeira
-            // interação do usuário. Se for bloqueado, o botão manual continua disponível.
-            function tryAutoplay() {
-                var promise = audio.play();
-                if (promise !== undefined) {
-                    promise.then(updateBtn).catch(function() {
-                        // Autoplay bloqueado pelo navegador - controle manual permanece ativo
-                    });
-                }
-            }
-
-            tryAutoplay();
         })();
     </script>
 

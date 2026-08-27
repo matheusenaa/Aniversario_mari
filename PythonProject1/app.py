@@ -3,6 +3,7 @@ import os
 import sqlite3
 import urllib.request
 from datetime import datetime
+from urllib.parse import quote
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
@@ -12,6 +13,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # URL do Google Apps Script (Web App) publicada pelo dono da planilha.
 # Configure esta variável na hospedagem (Render) ou em um arquivo .env local.
 GOOGLE_SHEETS_WEBAPP_URL = os.environ.get('GOOGLE_SHEETS_WEBAPP_URL', '')
+
+# Endereço e link oficial do Google Maps para a localização do evento
+MAPS_LINK = "https://www.google.com/maps/place/15%C2%B037'38.7%22S+47%C2%B050'09.8%22W/@-15.6274167,-47.8386166,17z/data=!3m1!4b1!4m4!3m3!8m2!3d-15.6274167!4d-47.8360417?hl=pt-BR&entry=ttu&g_ep=EgoyMDI2MDgyNC4wIKXMDSoASAFQAw%3D%3D"
 
 
 def salvar_no_sheets(nome='', presenca='', presente='', acompanhantes='', mensagem=''):
@@ -112,7 +116,11 @@ def index():
     site_url = request.url
     qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={site_url}"
 
-    return render_template('index.html', presentes=presentes, presencas=presencas, qr_code_url=qr_code_url)
+    # QR Code da localização do evento (abre o Google Maps no endereço do convite)
+    qr_code_local_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={quote(MAPS_LINK, safe='')}"
+
+    return render_template('index.html', presentes=presentes, presencas=presencas,
+                           qr_code_url=qr_code_url, qr_code_local_url=qr_code_local_url, maps_link=MAPS_LINK)
 
 
 @app.route('/reservar/<int:item_id>', methods=['POST'])
