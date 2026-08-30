@@ -95,10 +95,34 @@ def init_db():
             ("Livro: Heróis do Olimpo Vol. 3 - A Marca de Atena",),
             ("Livro: Heróis do Olimpo Vol. 4 - A Casa de Hades",),
             ("Livro: Heróis do Olimpo Vol. 5 - O Sangue do Olimpo",),
-            ("Contribuição via Pix",)
+            ("Contribuição via Pix",),
+            ("Produtos para cabelo cacheado",)
         ]
         cursor.executemany('INSERT INTO presentes (nome) VALUES (?)', itens_iniciais)
         conn.commit()
+
+    # Garante que itens novos adicionados posteriormente também existam,
+    # mesmo que o banco já tenha sido criado (insere apenas se faltar).
+    itens_definidos = [
+        "Acessórios (colares, anéis, pulseiras etc.)",
+        "Tênis (tamanho 38/39)",
+        "Perfumes",
+        "Body Splash",
+        "Bolsas",
+        "Roupas (jaquetas, calças, blusas, vestidos, conjuntos)",
+        "Livro: Heróis do Olimpo Vol. 1 - O Herói Perdido",
+        "Livro: Heróis do Olimpo Vol. 2 - O Filho de Netuno",
+        "Livro: Heróis do Olimpo Vol. 3 - A Marca de Atena",
+        "Livro: Heróis do Olimpo Vol. 4 - A Casa de Hades",
+        "Livro: Heróis do Olimpo Vol. 5 - O Sangue do Olimpo",
+        "Contribuição via Pix",
+        "Produtos para cabelo cacheado",
+    ]
+    for nome_item in itens_definidos:
+        cursor.execute('SELECT COUNT(*) FROM presentes WHERE nome = ?', (nome_item,))
+        if cursor.fetchone()[0] == 0:
+            cursor.execute('INSERT INTO presentes (nome) VALUES (?)', (nome_item,))
+    conn.commit()
     conn.close()
 
 
@@ -129,9 +153,20 @@ def reservar(item_id):
     if nome_convidado:
         conn = get_db_connection()
         presente = conn.execute('SELECT nome FROM presentes WHERE id = ?', (item_id,)).fetchone()
-        # Insere ou atualiza o registro permitindo que múltiplos convidados escolham a opção
-        conn.execute('UPDATE presentes SET reservado = 1, por = COALESCE(por || ", ", "") || ? WHERE id = ?', (nome_convidado, item_id))
-        conn.commit()
+        # Evita gravar o mesmo nome duplicado na coluna 'por' do SQLite.
+        # Normaliza para comparação (ignora maiúsculas/minúsculas e espaços).
+        registros_por = conn.execute('SELECT por FROM presentes WHERE id = ?', (item_id,)).fetchone()
+        ja_existe = False
+        if registros_por and registros_por['por']:
+            normalizado = nome_convidado.strip().upper()
+            for parte in registros_por['por'].split(','):
+                parte = parte.strip()
+                if parte and parte.upper() == normalizado:
+                    ja_existe = True
+                    break
+        if not ja_existe:
+            conn.execute('UPDATE presentes SET reservado = 1, por = COALESCE(por || ", ", "") || ? WHERE id = ?', (nome_convidado, item_id))
+            conn.commit()
         conn.close()
         presente_nome = presente['nome'] if presente else f'Presente #{item_id}'
         salvar_no_sheets(nome=nome_convidado, presenca='', presente=presente_nome)
